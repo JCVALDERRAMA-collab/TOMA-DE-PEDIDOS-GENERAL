@@ -25,11 +25,11 @@ def get_next_consecutive():
         except ValueError:
             st.warning(f"Advertencia: El archivo '{CONSECUTIVE_FILE}' contiene un valor inválido. Reiniciando consecutivo a {INITIAL_CONSECUTIVE}.")
             current_consecutive = INITIAL_CONSECUTIVE
-
+    
     next_consecutive = current_consecutive + 1
     with open(CONSECUTIVE_FILE, 'w') as f:
         f.write(str(next_consecutive))
-
+    
     return next_consecutive
 
 # Initialize the file if it doesn't exist on first run
@@ -37,7 +37,7 @@ if not os.path.exists(CONSECUTIVE_FILE):
     with open(CONSECUTIVE_FILE, 'w') as f:
         f.write(str(INITIAL_CONSECUTIVE))
 
-# --- 1. Datos de los productos (este no cambia) ---
+# --- 1. Datos de los productos ---
 productos_data = [
     {"COD_PRODUCTO": "DDPHCO0010", "DESCRIPCION": "DERMADIVA CON COLAGENO X 10 UNIDAD / CAJA X 48", "UNIDAD_X_PAQUETE": 10, "UNIDAD_X_CAJA": 48},
     {"COD_PRODUCTO": "DDPHPE0001", "DESCRIPCION": "DERMADIVA CON PEPINO X 10UNIDAD / CAJA X 48", "UNIDAD_X_PAQUETE": 10, "UNIDAD_X_CAJA": 48},
@@ -110,55 +110,11 @@ if 'cantidad_cajas_input' not in st.session_state:
 if 'cantidad_unidades_input' not in st.session_state:
     st.session_state.cantidad_unidades_input = 0
 if 'current_consecutive_number' not in st.session_state:
-    st.session_state.current_consecutive_number = None
-if 'reset_inputs_flag' not in st.session_state:
+    st.session_state.current_consecutive_number = None 
+if 'reset_inputs_flag' not in st.session_state: # NEW FLAG
     st.session_state.reset_inputs_flag = False
-if 'nit_input_value' not in st.session_state: # New: To store NIT input
-    st.session_state.nit_input_value = ''
-if 'nombre_cliente_display' not in st.session_state: # New: To store client name to display
-    st.session_state.nombre_cliente_display = 'CONSUMIDOR FINAL'
 
-# --- NEW: Load Client Data from GitHub (modified for .xlsx) ---
-# Reemplaza esta URL con la URL "Raw" de tu archivo clientes.xlsx en GitHub
-CLIENTES_GITHUB_URL = 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/TU_RAMA/clientes.xlsx' 
-
-df_clientes = pd.DataFrame() # Initialize an empty DataFrame
-try:
-    # Use pd.read_excel() instead of pd.read_csv()
-    df_clientes = pd.read_excel(CLIENTES_GITHUB_URL)
-    # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
-    df_clientes['NIT'] = df_clientes['NIT'].astype(str)
-    st.success("✔️ Base de datos de clientes cargada desde GitHub.")
-except Exception as e:
-    # MODIFICACIÓN CLAVE AQUÍ: Asegurarse de que el mensaje de error no use una variable no definida
-    st.error(f"Error al cargar la base de datos de clientes desde GitHub: {e}. Asegúrate de que la URL sea correcta y el archivo '{os.path.basename(CLIENTES_GITHUB_URL)}' exista y sea válido.")
-    st.warning("El autocompletado de clientes no funcionará.")
-
-
-# --- NEW: Function to lookup client name ---
-def lookup_client_name(nit_value):
-    if df_clientes.empty or not nit_value:
-        return 'CONSUMIDOR FINAL' # Default if no data or no NIT entered
-
-    # Search for the NIT in the client DataFrame
-    # Ensure the input NIT is also a string for consistent comparison
-    found_client = df_clientes[df_clientes['NIT'] == str(nit_value)]
-    if not found_client.empty:
-        return found_client.iloc[0]['NOMBRE_CLIENTE']
-    else:
-        return 'CONSUMIDOR FINAL' # Default if NIT not found
-
-
-# --- NEW: Callback for NIT input change ---
-def on_nit_change():
-    # Update the stored NIT value and re-lookup client name
-    st.session_state.nombre_cliente_display = lookup_client_name(st.session_state.nit_input_widget)
-    # Important: Reset summary if NIT changes to ensure it's regenerated with correct client name
-    st.session_state.global_summary_core_text = ""
-    st.session_state.show_generated_summary = False
-
-
-# --- Check reset flag at the start of the script ---
+# --- NEW: Check reset flag at the start of the script ---
 if st.session_state.reset_inputs_flag:
     st.session_state.product_select_index = 0
     st.session_state.cantidad_cajas_input = 0
@@ -225,33 +181,14 @@ try:
 except FileNotFoundError:
     st.warning("⚠️ No se encontró el logo. Asegúrate de que 'LOGO 2.png' esté en la misma carpeta o la ruta sea correcta.")
 
-st.title("📝 Generador de Pedidos General")
+st.title("📝 Generador de Pedidos Consumidor Final")
 st.markdown("Completa los detalles para generar un resumen de tu solicitud.")
 
 st.write("---")
 
 st.subheader("Datos del Cliente")
-
-# Modified NIT input
-nit_input_value = st.text_input(
-    "NIT:",
-    value=st.session_state.nit_input_value, # Use session state for value
-    key='nit_input_widget', # Unique key
-    on_change=on_nit_change # Call on_nit_change when NIT input changes
-)
-
-# After the text_input, update the session state for the NIT value
-st.session_state.nit_input_value = nit_input_value
-
-# Display the client name based on lookup
-# Use st.session_state.nombre_cliente_display for the client name
-nombre_cliente = st.text_input(
-    "Cliente:",
-    value=st.session_state.nombre_cliente_display, # Use the dynamic client name
-    disabled=True, # Keep this disabled as it's auto-populated
-    key='cliente_display_input' # A new key for the display field
-)
-
+nit = st.text_input("NIT:", value='222222222', disabled=True, key='nit_input')
+nombre_cliente = st.text_input("Cliente:", value='CONSUMIDOR FINAL', disabled=True, key='cliente_input')
 
 st.write("---")
 
@@ -315,7 +252,7 @@ st.subheader("Productos en el Pedido")
 if st.session_state.pedido_actual:
     if not st.session_state.show_generated_summary:
         st.button("Limpiar Pedido Completo", key='clear_all_products_button', type="secondary", on_click=clear_all_products)
-
+            
     for i, item in enumerate(st.session_state.pedido_actual):
         total_unidades_item = (item['CANT_CAJAS'] * item['UNIDAD_X_CAJA']) + item['CANT_UNIDADES_IND']
         st.markdown(f"**{i+1}.** {item['DESCRIPCION']} - Cajas: {item['CANT_CAJAS']}, Unidades: {item['CANT_UNIDADES_IND']} (Total: {total_unidades_item} uds)")
@@ -355,14 +292,14 @@ if not st.session_state.show_generated_summary:
             else:
                 if st.session_state.current_consecutive_number is None:
                     st.session_state.current_consecutive_number = get_next_consecutive()
-
+                
                 summary_core = ""
                 summary_core += "--- Resumen General de la Solicitud ---\n"
                 summary_core += f"Número de Pedido: {st.session_state.current_consecutive_number}\n"
                 summary_core += f"Fecha y Hora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                summary_core += f"NIT: {st.session_state.nit_input_value}\n" # Use stored NIT value
-                summary_core += f"Cliente: {st.session_state.nombre_cliente_display}\n" # Use stored client name
-
+                summary_core += f"NIT: {nit}\n"
+                summary_core += f"Cliente: {nombre_cliente}\n"
+                
                 if cliente_email_input:
                     summary_core += f"Email Cliente: {cliente_email_input}\n"
                 if cliente_telefono_input:
@@ -379,10 +316,10 @@ if not st.session_state.show_generated_summary:
                     summary_core += f"  Cant. Unidades Individuales: {item['CANT_UNIDADES_IND']}\n"
                     summary_core += f"  Unidades por Caja (del producto): {item['UNIDAD_X_CAJA']}\n"
                     summary_core += f"  Total Unidades Calculadas: {total_unidades_item}\n"
-
+                
                 summary_core += "\n-------------------------------------\n"
                 summary_core += "Resumen de la solicitud finalizado."
-
+                
                 st.session_state.global_summary_core_text = summary_core
                 st.session_state.show_generated_summary = True
                 st.rerun()
@@ -405,6 +342,6 @@ if st.session_state.show_generated_summary:
             type="secondary",
             on_click=go_back_and_add_more
         )
-        
+
 st.markdown("---")
 st.caption("Hecho por Cartera ATW Internacional.")
