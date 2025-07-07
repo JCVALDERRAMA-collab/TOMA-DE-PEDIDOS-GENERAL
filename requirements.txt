@@ -1,3 +1,4 @@
 streamlit
 pyperclip
 st-copy-to-clipboard
+DataFrame
