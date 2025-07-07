@@ -1,4 +1,4 @@
-import streamlit as st
+iimport streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
@@ -130,7 +130,8 @@ try:
     df_clientes['NIT'] = df_clientes['NIT'].astype(str)
     st.success("✔️ Base de datos de clientes cargada desde GitHub.")
 except Exception as e:
-    st.error(f"Error al cargar la base de datos de clientes desde GitHub: {e}. Asegúrate de que la URL sea correcta y el archivo exista.")
+    # MODIFICACIÓN CLAVE AQUÍ: Asegurarse de que el mensaje de error no use una variable no definida
+    st.error(f"Error al cargar la base de datos de clientes desde GitHub: {e}. Asegúrate de que la URL sea correcta y el archivo '{os.path.basename(CLIENTES_GITHUB_URL)}' exista y sea válido.")
     st.warning("El autocompletado de clientes no funcionará.")
 
 
