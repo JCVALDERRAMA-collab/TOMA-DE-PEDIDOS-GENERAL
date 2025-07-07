@@ -190,7 +190,7 @@ try:
 except FileNotFoundError:
     st.warning("⚠️ No se encontró el logo. Asegúrate de que 'LOGO 2.png' esté en la misma carpeta o la ruta sea correcta.")
 
-st.title("📝 Generador de Pedidos Consumidor Final")
+st.title("📝 Generador de Pedidos General")
 st.markdown("Completa los detalles para generar un resumen de tu solicitud.")
 
 st.write("---")
