@@ -37,7 +37,7 @@ if not os.path.exists(CONSECUTIVE_FILE):
     with open(CONSECUTIVE_FILE, 'w') as f:
         f.write(str(INITIAL_CONSECUTIVE))
 
-# --- 1. Datos de los productos ---
+# --- 1. Datos de los productos (este no cambia) ---
 productos_data = [
     {"COD_PRODUCTO": "DDPHCO0010", "DESCRIPCION": "DERMADIVA CON COLAGENO X 10 UNIDAD / CAJA X 48", "UNIDAD_X_PAQUETE": 10, "UNIDAD_X_CAJA": 48},
     {"COD_PRODUCTO": "DDPHPE0001", "DESCRIPCION": "DERMADIVA CON PEPINO X 10UNIDAD / CAJA X 48", "UNIDAD_X_PAQUETE": 10, "UNIDAD_X_CAJA": 48},
@@ -118,18 +118,20 @@ if 'nit_input_value' not in st.session_state: # New: To store NIT input
 if 'nombre_cliente_display' not in st.session_state: # New: To store client name to display
     st.session_state.nombre_cliente_display = 'CONSUMIDOR FINAL'
 
-# --- NEW: Load Client Data ---
-CLIENTES_FILE = 'clientes.csv' # Assuming the file is named clientes.csv
+# --- NEW: Load Client Data from GitHub (modified for .xlsx) ---
+# Reemplaza esta URL con la URL "Raw" de tu archivo clientes.xlsx en GitHub
+CLIENTES_GITHUB_URL = 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/TU_RAMA/clientes.xlsx' 
+
 df_clientes = pd.DataFrame() # Initialize an empty DataFrame
-if os.path.exists(CLIENTES_FILE):
-    try:
-        df_clientes = pd.read_csv(CLIENTES_FILE)
-        # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
-        df_clientes['NIT'] = df_clientes['NIT'].astype(str)
-    except Exception as e:
-        st.error(f"Error al cargar la base de datos de clientes: {e}. Asegúrate de que '{CLIENTES_FILE}' sea un CSV válido.")
-else:
-    st.warning(f"Advertencia: No se encontró el archivo de clientes '{CLIENTES_FILE}'. El autocompletado de clientes no funcionará.")
+try:
+    # Use pd.read_excel() instead of pd.read_csv()
+    df_clientes = pd.read_excel(CLIENTES_GITHUB_URL)
+    # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
+    df_clientes['NIT'] = df_clientes['NIT'].astype(str)
+    st.success("✔️ Base de datos de clientes cargada desde GitHub.")
+except Exception as e:
+    st.error(f"Error al cargar la base de datos de clientes desde GitHub: {e}. Asegúrate de que la URL sea correcta y el archivo exista.")
+    st.warning("El autocompletado de clientes no funcionará.")
 
 
 # --- NEW: Function to lookup client name ---
