@@ -120,7 +120,7 @@ if 'nombre_cliente_display' not in st.session_state: # New: To store client name
 
 # --- NEW: Load Client Data ---
 # Changed to .xlsx
-CLIENTES_FILE = 'clientes.xlsx' 
+CLIENTES_FILE = 'CLIENTES CSV.xlsx' 
 df_clientes = pd.DataFrame() # Initialize an empty DataFrame
 if os.path.exists(CLIENTES_FILE):
     try:
