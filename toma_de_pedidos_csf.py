@@ -113,32 +113,26 @@ if 'current_consecutive_number' not in st.session_state:
     st.session_state.current_consecutive_number = None
 if 'reset_inputs_flag' not in st.session_state:
     st.session_state.reset_inputs_flag = False
-if 'nit_input_value' not in st.session_state:
+if 'nit_input_value' not in st.session_state: # New: To store NIT input
     st.session_state.nit_input_value = ''
-if 'nombre_cliente_display' not in st.session_state:
+if 'nombre_cliente_display' not in st.session_state: # New: To store client name to display
     st.session_state.nombre_cliente_display = 'CONSUMIDOR FINAL'
-if 'last_email_input_value' not in st.session_state: # To track changes in email
-    st.session_state.last_email_input_value = ''
-if 'last_phone_input_value' not in st.session_state: # To track changes in phone
-    st.session_state.last_phone_input_value = ''
 
-# --- Load Client Data ---
-CLIENTES_FILE = 'CLIENTES.xlsx'
+# --- NEW: Load Client Data ---
+CLIENTES_FILE = 'clientes.csv' # Assuming the file is named clientes.csv
 df_clientes = pd.DataFrame() # Initialize an empty DataFrame
 if os.path.exists(CLIENTES_FILE):
     try:
-        df_clientes = pd.read_excel(CLIENTES_FILE) # Corrected variable name: CLIENTES_FILE
+        df_clientes = pd.read_csv(CLIENTES_FILE)
         # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
-        if 'NIT' in df_clientes.columns:
-            df_clientes['NIT'] = df_clientes['NIT'].astype(str)
-        else:
-            st.warning(f"Advertencia: El archivo '{CLIENTES_FILE}' no contiene una columna 'NIT'.")
+        df_clientes['NIT'] = df_clientes['NIT'].astype(str)
     except Exception as e:
-        st.error(f"Error al cargar la base de datos de clientes: {e}. Asegúrate de que '{CLIENTES_FILE}' sea un archivo Excel válido y esté en el formato correcto.")
+        st.error(f"Error al cargar la base de datos de clientes: {e}. Asegúrate de que '{CLIENTES_FILE}' sea un CSV válido.")
 else:
     st.warning(f"Advertencia: No se encontró el archivo de clientes '{CLIENTES_FILE}'. El autocompletado de clientes no funcionará.")
 
-# --- Function to lookup client name ---
+
+# --- NEW: Function to lookup client name ---
 def lookup_client_name(nit_value):
     if df_clientes.empty or not nit_value:
         return 'CONSUMIDOR FINAL' # Default if no data or no NIT entered
@@ -147,25 +141,21 @@ def lookup_client_name(nit_value):
     # Ensure the input NIT is also a string for consistent comparison
     found_client = df_clientes[df_clientes['NIT'] == str(nit_value)]
     if not found_client.empty:
-        # Check if 'NOMBRE_CLIENTE' column exists
-        if 'NOMBRE_CLIENTE' in found_client.columns:
-            return found_client.iloc[0]['NOMBRE_CLIENTE']
-        else:
-            st.warning("Advertencia: La columna 'NOMBRE_CLIENTE' no se encontró en el archivo de clientes.")
-            return 'CONSUMIDOR FINAL'
+        return found_client.iloc[0]['NOMBRE_CLIENTE']
     else:
         return 'CONSUMIDOR FINAL' # Default if NIT not found
 
-# --- Callback for NIT input change ---
+
+# --- NEW: Callback for NIT input change ---
 def on_nit_change():
     # Update the stored NIT value and re-lookup client name
     st.session_state.nombre_cliente_display = lookup_client_name(st.session_state.nit_input_widget)
-    # Reset summary if NIT changes to ensure it's regenerated with correct client name
+    # Important: Reset summary if NIT changes to ensure it's regenerated with correct client name
     st.session_state.global_summary_core_text = ""
     st.session_state.show_generated_summary = False
 
+
 # --- Check reset flag at the start of the script ---
-# This ensures inputs are reset at the beginning of a new run if the flag was set
 if st.session_state.reset_inputs_flag:
     st.session_state.product_select_index = 0
     st.session_state.cantidad_cajas_input = 0
@@ -187,30 +177,30 @@ def is_valid_phone(phone):
     return re.match(r"^\+?[\d\s\-]{7,15}$", phone)
 
 # --- Callback function to handle adding product and setting reset flag ---
-def add_product_callback(producto_encontrado, selected_description, cantidad_cajas, cantidad_unidades):
-    if not selected_description or (cantidad_cajas == 0 and cantidad_unidades == 0):
+def add_product_callback(producto_encontrado, selected_index, cantidad_cajas, cantidad_unidades):
+    if not selected_index or (cantidad_cajas == 0 and cantidad_unidades == 0):
         st.error("❌ Error: Selecciona un producto e ingresa al menos una cantidad (caja o unidad).")
     else:
         st.session_state.pedido_actual.append({
             "COD_PRODUCTO": producto_encontrado['COD_PRODUCTO'],
-            "DESCRIPCION": selected_description,
+            "DESCRIPCION": selected_index,
             "CANT_CAJAS": cantidad_cajas,
             "CANT_UNIDADES_IND": cantidad_unidades,
             "UNIDAD_X_CAJA": producto_encontrado['UNIDAD_X_CAJA'],
             "UNIDAD_X_PAQUETE": producto_encontrado['UNIDAD_X_PAQUETE']
         })
-        st.success(f"Producto '{selected_description}' añadido al pedido.")
+        st.success(f"Producto '{selected_index}' añadido al pedido.")
         st.session_state.global_summary_core_text = ""
         st.session_state.show_generated_summary = False
         st.session_state.reset_inputs_flag = True # Set the flag here to trigger reset on next run
-        st.rerun() # Rerun to apply input resets immediately
+        # No need for st.rerun() here, as setting the flag will cause it naturally
 
 # --- Callback function for 'Volver y Añadir Más Productos' button ---
 def go_back_and_add_more():
     st.session_state.show_generated_summary = False
     st.session_state.global_summary_core_text = ""
     st.session_state.reset_inputs_flag = True # Reset inputs when going back
-    st.rerun() # Rerun to apply input resets immediately
+    # No st.rerun() needed
 
 # --- Callback function for 'Limpiar Pedido Completo' button ---
 def clear_all_products():
@@ -220,7 +210,8 @@ def clear_all_products():
     st.session_state.current_consecutive_number = None
     st.session_state.reset_inputs_flag = True # Reset inputs when clearing order
     st.success("✔️ ¡Pedido limpiado!")
-    st.rerun() # Rerun to apply input resets immediately
+    # No st.rerun() needed
+
 
 # --- Streamlit UI ---
 st.set_page_config(layout="centered", page_title="Generador de Pedidos Consumidor Final")
@@ -234,50 +225,51 @@ except FileNotFoundError:
 st.title("📝 Generador de Pedidos General")
 st.markdown("Completa los detalles para generar un resumen de tu solicitud.")
 
----
+st.write("---")
 
-## Datos del Cliente
+st.subheader("Datos del Cliente")
 
-# NIT input field
-nit_input_value_current = st.text_input(
+# Modified NIT input
+nit_input_value = st.text_input(
     "NIT:",
-    value=st.session_state.nit_input_value,
-    key='nit_input_widget',
-    on_change=on_nit_change # Callback for when input changes
+    value=st.session_state.nit_input_value, # Use session state for value
+    key='nit_input_widget', # Unique key
+    on_change=on_nit_change # Call on_nit_change when NIT input changes
 )
-# Update the session state value for NIT after the widget has been rendered
-st.session_state.nit_input_value = nit_input_value_current
 
-# Client name display field (disabled and auto-populated)
+# After the text_input, update the session state for the NIT value
+st.session_state.nit_input_value = nit_input_value
+
+# Display the client name based on lookup
+# Use st.session_state.nombre_cliente_display for the client name
 nombre_cliente = st.text_input(
     "Cliente:",
-    value=st.session_state.nombre_cliente_display,
-    disabled=True,
-    key='cliente_display_input'
+    value=st.session_state.nombre_cliente_display, # Use the dynamic client name
+    disabled=True, # Keep this disabled as it's auto-populated
+    key='cliente_display_input' # A new key for the display field
 )
 
----
 
-## Selección de Productos
+st.write("---")
+
+st.subheader("Selección de Productos")
 
 if not st.session_state.show_generated_summary:
-    selected_description = st.selectbox(
+    selected_index = st.selectbox(
         'Selecciona un producto:',
         options=all_product_options,
         index=st.session_state.product_select_index,
         key='product_select_widget',
         help="Empieza a escribir o selecciona un producto de la lista."
     )
-    # Update the session state index based on the current selection.
-    if selected_description in all_product_options:
-        st.session_state.product_select_index = all_product_options.index(selected_description)
-    else:
-        st.session_state.product_select_index = 0 # Reset if selected_description is not found (e.g., empty string)
+    # The selectbox's value changes, so we need to update its index in state
+    # This line should remain as it updates the index based on user selection in the current run
+    st.session_state.product_select_index = all_product_options.index(selected_index) if selected_index in all_product_options else 0
 
 
     producto_encontrado = None
-    if selected_description and selected_description != "":
-        df_filtered = df_productos[df_productos['DESCRIPCION'] == selected_description]
+    if selected_index and selected_index != "":
+        df_filtered = df_productos[df_productos['DESCRIPCION'] == selected_index]
         if not df_filtered.empty:
             producto_encontrado = df_filtered.iloc[0]
         else:
@@ -311,13 +303,12 @@ if not st.session_state.show_generated_summary:
         key='add_product_button',
         disabled=(producto_encontrado is None or (cantidad_cajas == 0 and cantidad_unidades == 0)),
         on_click=add_product_callback,
-        args=(producto_encontrado, selected_description, cantidad_cajas, cantidad_unidades)
+        args=(producto_encontrado, selected_index, cantidad_cajas, cantidad_unidades)
     )
 
----
+st.write("---")
 
-## Productos en el Pedido
-
+st.subheader("Productos en el Pedido")
 if st.session_state.pedido_actual:
     if not st.session_state.show_generated_summary:
         st.button("Limpiar Pedido Completo", key='clear_all_products_button', type="secondary", on_click=clear_all_products)
@@ -328,26 +319,23 @@ if st.session_state.pedido_actual:
 else:
     st.info("No hay productos añadidos al pedido aún.")
 
----
+st.write("---")
 
-## Información de Contacto Adicional
+st.subheader("Información de Contacto Adicional")
 
-cliente_email_input = st.text_input("Email Cliente:", value=st.session_state.cliente_email_input, placeholder='ejemplo@dominio.com', key='cliente_email_input_widget')
-cliente_telefono_input = st.text_input("Teléfono Cliente:", value=st.session_state.cliente_telefono_input, placeholder='Ej: 3001234567', key='cliente_telefono_input_widget')
-
-# Update session state for email and phone inputs
-st.session_state.cliente_email_input = cliente_email_input
-st.session_state.cliente_telefono_input = cliente_telefono_input
+cliente_email_input = st.text_input("Email Cliente:", value=st.session_state.cliente_email_input, placeholder='ejemplo@dominio.com', key='cliente_email_input')
+cliente_telefono_input = st.text_input("Teléfono Cliente:", value=st.session_state.cliente_telefono_input, placeholder='Ej: 3001234567', key='cliente_telefono_input')
 
 # Check if contact info has changed. If so, reset summary state
-if (cliente_email_input != st.session_state.last_email_input_value) or \
-   (cliente_telefono_input != st.session_state.last_phone_input_value):
+if (cliente_email_input != st.session_state.get('last_email_input_value', '')) or \
+   (cliente_telefono_input != st.session_state.get('last_phone_input_value', '')):
     st.session_state.global_summary_core_text = ""
     st.session_state.show_generated_summary = False
     st.session_state.last_email_input_value = cliente_email_input
     st.session_state.last_phone_input_value = cliente_telefono_input
 
----
+
+st.write("---")
 
 if not st.session_state.show_generated_summary:
     if st.button('Generar Resumen Final', type="secondary", key='generate_summary_button'):
@@ -369,8 +357,8 @@ if not st.session_state.show_generated_summary:
                 summary_core += "--- Resumen General de la Solicitud ---\n"
                 summary_core += f"Número de Pedido: {st.session_state.current_consecutive_number}\n"
                 summary_core += f"Fecha y Hora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                summary_core += f"NIT: {st.session_state.nit_input_value if st.session_state.nit_input_value else 'N/A'}\n"
-                summary_core += f"Cliente: {st.session_state.nombre_cliente_display}\n"
+                summary_core += f"NIT: {st.session_state.nit_input_value}\n" # Use stored NIT value
+                summary_core += f"Cliente: {st.session_state.nombre_cliente_display}\n" # Use stored client name
 
                 if cliente_email_input:
                     summary_core += f"Email Cliente: {cliente_email_input}\n"
@@ -414,6 +402,5 @@ if st.session_state.show_generated_summary:
             type="secondary",
             on_click=go_back_and_add_more
         )
-        
 st.markdown("---")
 st.caption("Hecho por Cartera ATW Internacional.")
