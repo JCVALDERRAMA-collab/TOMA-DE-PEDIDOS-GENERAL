@@ -125,7 +125,7 @@ df_clientes = pd.DataFrame() # Initialize an empty DataFrame
 if os.path.exists(CLIENTES_FILE):
     try:
         # Use pd.read_excel() for Excel files
-        df_clientes = pd.read_excel(CLIENTES_FILE)
+        df_clientes = pd.read_excel(CLIENTES_CSV)
         # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
         df_clientes['NIT'] = df_clientes['NIT'].astype(str)
     except Exception as e:
