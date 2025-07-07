@@ -127,7 +127,7 @@ CLIENTES_FILE = 'CLIENTES.xlsx'
 df_clientes = pd.DataFrame() # Initialize an empty DataFrame
 if os.path.exists(CLIENTES_FILE):
     try:
-        df_clientes = pd.read_excel(CLIENTES_FILE) # Corrected variable name here
+        df_clientes = pd.read_excel(CLIENTES_FILE) # Corrected variable name: CLIENTES_FILE
         # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
         if 'NIT' in df_clientes.columns:
             df_clientes['NIT'] = df_clientes['NIT'].astype(str)
@@ -159,9 +159,8 @@ def lookup_client_name(nit_value):
 # --- Callback for NIT input change ---
 def on_nit_change():
     # Update the stored NIT value and re-lookup client name
-    # The value of the text_input is automatically updated in st.session_state.nit_input_widget
     st.session_state.nombre_cliente_display = lookup_client_name(st.session_state.nit_input_widget)
-    # Important: Reset summary if NIT changes to ensure it's regenerated with correct client name
+    # Reset summary if NIT changes to ensure it's regenerated with correct client name
     st.session_state.global_summary_core_text = ""
     st.session_state.show_generated_summary = False
 
@@ -235,9 +234,9 @@ except FileNotFoundError:
 st.title("📝 Generador de Pedidos General")
 st.markdown("Completa los detalles para generar un resumen de tu solicitud.")
 
-st.write("---")
+---
 
-st.subheader("Datos del Cliente")
+## Datos del Cliente
 
 # NIT input field
 nit_input_value_current = st.text_input(
@@ -257,9 +256,9 @@ nombre_cliente = st.text_input(
     key='cliente_display_input'
 )
 
-st.write("---")
+---
 
-st.subheader("Selección de Productos")
+## Selección de Productos
 
 if not st.session_state.show_generated_summary:
     selected_description = st.selectbox(
@@ -270,7 +269,6 @@ if not st.session_state.show_generated_summary:
         help="Empieza a escribir o selecciona un producto de la lista."
     )
     # Update the session state index based on the current selection.
-    # This is crucial for Streamlit's state management to persist the selected item.
     if selected_description in all_product_options:
         st.session_state.product_select_index = all_product_options.index(selected_description)
     else:
@@ -316,9 +314,10 @@ if not st.session_state.show_generated_summary:
         args=(producto_encontrado, selected_description, cantidad_cajas, cantidad_unidades)
     )
 
-st.write("---")
+---
 
-st.subheader("Productos en el Pedido")
+## Productos en el Pedido
+
 if st.session_state.pedido_actual:
     if not st.session_state.show_generated_summary:
         st.button("Limpiar Pedido Completo", key='clear_all_products_button', type="secondary", on_click=clear_all_products)
@@ -329,9 +328,9 @@ if st.session_state.pedido_actual:
 else:
     st.info("No hay productos añadidos al pedido aún.")
 
-st.write("---")
+---
 
-st.subheader("Información de Contacto Adicional")
+## Información de Contacto Adicional
 
 cliente_email_input = st.text_input("Email Cliente:", value=st.session_state.cliente_email_input, placeholder='ejemplo@dominio.com', key='cliente_email_input_widget')
 cliente_telefono_input = st.text_input("Teléfono Cliente:", value=st.session_state.cliente_telefono_input, placeholder='Ej: 3001234567', key='cliente_telefono_input_widget')
@@ -348,7 +347,7 @@ if (cliente_email_input != st.session_state.last_email_input_value) or \
     st.session_state.last_email_input_value = cliente_email_input
     st.session_state.last_phone_input_value = cliente_telefono_input
 
-st.write("---")
+---
 
 if not st.session_state.show_generated_summary:
     if st.button('Generar Resumen Final', type="secondary", key='generate_summary_button'):
