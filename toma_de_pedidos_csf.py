@@ -196,7 +196,7 @@ st.markdown("Completa los detalles para generar un resumen de tu solicitud.")
 st.write("---")
 
 st.subheader("Datos del Cliente")
-nit = st.text_input("NIT:", value='222222222', disabled=True, key='nit_input')
+nit = st.text_input("NIT:", value='', disabled=False, key='nit_input') # Cambiado a disabled=False y value vacío
 nombre_cliente = st.text_input("Cliente:", value='CONSUMIDOR FINAL', disabled=True, key='cliente_input')
 
 st.write("---")
