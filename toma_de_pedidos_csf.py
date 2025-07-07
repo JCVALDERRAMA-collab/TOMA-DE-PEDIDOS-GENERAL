@@ -119,15 +119,17 @@ if 'nombre_cliente_display' not in st.session_state: # New: To store client name
     st.session_state.nombre_cliente_display = 'CONSUMIDOR FINAL'
 
 # --- NEW: Load Client Data ---
-CLIENTES_FILE = 'clientes.csv' # Assuming the file is named clientes.csv
+# Changed to .xlsx
+CLIENTES_FILE = 'clientes.xlsx' 
 df_clientes = pd.DataFrame() # Initialize an empty DataFrame
 if os.path.exists(CLIENTES_FILE):
     try:
-        df_clientes = pd.read_csv(CLIENTES_FILE)
+        # Use pd.read_excel() for Excel files
+        df_clientes = pd.read_excel(CLIENTES_FILE)
         # Ensure NIT column is treated as string to avoid type issues (e.g., leading zeros)
         df_clientes['NIT'] = df_clientes['NIT'].astype(str)
     except Exception as e:
-        st.error(f"Error al cargar la base de datos de clientes: {e}. Asegúrate de que '{CLIENTES_FILE}' sea un CSV válido.")
+        st.error(f"Error al cargar la base de datos de clientes: {e}. Asegúrate de que '{CLIENTES_FILE}' sea un archivo Excel válido.")
 else:
     st.warning(f"Advertencia: No se encontró el archivo de clientes '{CLIENTES_FILE}'. El autocompletado de clientes no funcionará.")
 
@@ -402,5 +404,6 @@ if st.session_state.show_generated_summary:
             type="secondary",
             on_click=go_back_and_add_more
         )
+        
 st.markdown("---")
 st.caption("Hecho por Cartera ATW Internacional.")
